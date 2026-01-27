@@ -75,13 +75,10 @@ public class Dish {
         double totalCost = 0.0;
         for (DishIngredient di : dishIngredients) {
             if (di.getRequiredQuantity() == null) {
-                throw new RuntimeException(
-                        "Quantité requise manquante pour l’ingrédient '" +
-                                (di.getIngredient() != null ? di.getIngredient().getName() : "inconnu") + "'"
-                );
+                throw new RuntimeException("Quantité requise manquante");
             }
             if (di.getIngredient() == null || di.getIngredient().getPrice() == null) {
-                throw new RuntimeException("Prix de l’ingrédient manquant pour le calcul du coût");
+                throw new RuntimeException("Prix de l’ingrédient manquant");
             }
             totalCost += di.getIngredient().getPrice() * di.getRequiredQuantity();
         }
@@ -90,10 +87,9 @@ public class Dish {
 
     public Double getGrossMargin() {
         if (sellingPrice == null) {
-            throw new RuntimeException("Le prix de vente du plat est nul, impossible de calculer la marge brute");
+            throw new RuntimeException("Prix de vente null");
         }
-        double cost = getDishCost();
-        return sellingPrice - cost;
+        return sellingPrice - getDishCost();
     }
 
     @Override

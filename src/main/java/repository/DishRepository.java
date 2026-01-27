@@ -2,20 +2,21 @@ package repository;
 
 import database.DBConnection;
 import model.Dish;
+import model.DishIngredient;
 import model.DishTypeEnum;
-import model.Ingredient;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DishRepository {
 
-    private DBConnection dbConnection;
-    private IngredientRepository ingredientRepository;
+    private final DBConnection dbConnection;
+    private final DishIngredientRepository dishIngredientRepository;
 
     public DishRepository() {
         this.dbConnection = new DBConnection();
-        this.ingredientRepository = new IngredientRepository();
+        this.dishIngredientRepository = new DishIngredientRepository();
     }
 
     public Dish findDishById(Integer id) {
@@ -39,7 +40,9 @@ public class DishRepository {
             double sellingPrice = resultSet.getDouble("selling_price");
             dish.setSellingPrice(resultSet.wasNull() ? null : sellingPrice);
 
-            dish.setIngredients(ingredientRepository.findIngredientsByDishId(id, connection));
+            List<DishIngredient> dishIngredients =
+                    dishIngredientRepository.findByDishId(id, connection);
+            dish.setDishIngredients(dishIngredients);
 
             return dish;
 
@@ -57,7 +60,8 @@ public class DishRepository {
             connection.setAutoCommit(false);
 
             if (dishToSave.getId() == null) {
-                String insertSql = "INSERT INTO Dish (name, dish_type, selling_price) VALUES (?, ?::dish_type_enum, ?) RETURNING id";
+                String insertSql = "INSERT INTO Dish (name, dish_type, selling_price) " +
+                        "VALUES (?, ?::dish_type_enum, ?) RETURNING id";
                 PreparedStatement insertStatement = connection.prepareStatement(insertSql);
                 insertStatement.setString(1, dishToSave.getName());
                 insertStatement.setString(2, dishToSave.getDishType().name());
@@ -88,21 +92,11 @@ public class DishRepository {
                 updateStatement.executeUpdate();
             }
 
-            String dissociateSql = "UPDATE Ingredient SET id_dish = NULL WHERE id_dish = ?";
-            PreparedStatement dissociateStatement = connection.prepareStatement(dissociateSql);
-            dissociateStatement.setInt(1, dishToSave.getId());
-            dissociateStatement.executeUpdate();
+            // supprimer les anciens liens DishIngredient
+            dishIngredientRepository.deleteByDishId(dishToSave.getId(), connection);
 
-            if (dishToSave.getIngredients() != null && !dishToSave.getIngredients().isEmpty()) {
-                String associateSql = "UPDATE Ingredient SET id_dish = ? WHERE name = ?";
-                PreparedStatement associateStatement = connection.prepareStatement(associateSql);
-
-                for (Ingredient ingredient : dishToSave.getIngredients()) {
-                    associateStatement.setInt(1, dishToSave.getId());
-                    associateStatement.setString(2, ingredient.getName());
-                    associateStatement.executeUpdate();
-                }
-            }
+            // insérer les nouveaux liens DishIngredient
+            dishIngredientRepository.saveForDish(dishToSave, connection);
 
             connection.commit();
             connection.setAutoCommit(true);
@@ -122,13 +116,15 @@ public class DishRepository {
     }
 
     public List<Dish> findDishsByIngredientName(String ingredientName) {
-        String sql = "SELECT DISTINCT d.id, d.name, d.dish_type, d.selling_price " +
-                "FROM Dish d " +
-                "JOIN Ingredient i ON d.id = i.id_dish " +
-                "WHERE LOWER(i.name) LIKE LOWER(?)";
+        String sql =
+                "SELECT DISTINCT d.id, d.name, d.dish_type, d.selling_price " +
+                        "FROM Dish d " +
+                        "JOIN DishIngredient di ON d.id = di.id_dish " +
+                        "JOIN Ingredient i ON di.id_ingredient = i.id " +
+                        "WHERE LOWER(i.name) LIKE LOWER(?)";
 
         Connection connection = dbConnection.getDBConnection();
-        List<Dish> dishes = new java.util.ArrayList<>();
+        List<Dish> dishes = new ArrayList<>();
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -144,7 +140,10 @@ public class DishRepository {
                 double sellingPrice = resultSet.getDouble("selling_price");
                 dish.setSellingPrice(resultSet.wasNull() ? null : sellingPrice);
 
-                dish.setIngredients(ingredientRepository.findIngredientsByDishId(dish.getId(), connection));
+                List<DishIngredient> dishIngredients =
+                        dishIngredientRepository.findByDishId(dish.getId(), connection);
+                dish.setDishIngredients(dishIngredients);
+
                 dishes.add(dish);
             }
 

@@ -18,6 +18,7 @@ public class DataRetriever {
         this.ingredientRepository = new IngredientRepository();
     }
 
+    // Méthodes pour Dish
     public Dish findDishById(Integer id) {
         return dishRepository.findDishById(id);
     }
@@ -30,6 +31,7 @@ public class DataRetriever {
         return dishRepository.findDishsByIngredientName(ingredientName);
     }
 
+    // Méthodes pour Ingredient
     public List<Ingredient> findIngredients(int page, int size) {
         return ingredientRepository.findIngredients(page, size);
     }
@@ -41,5 +43,13 @@ public class DataRetriever {
     public List<Ingredient> findIngredientsByCriteria(String ingredientName, CategoryEnum category,
                                                       String dishName, int page, int size) {
         return ingredientRepository.findIngredientsByCriteria(ingredientName, category, dishName, page, size);
+    }
+
+    public Ingredient findIngredientById(Integer id) {
+        return ingredientRepository.findById(id);
+    }
+
+    public Ingredient findIngredientByName(String name) {
+        return ingredientRepository.findByName(name);
     }
 }

@@ -1,7 +1,6 @@
 package model;
 
 public class DishIngredient {
-    private Integer id;
     private Dish dish;
     private Ingredient ingredient;
     private Double requiredQuantity;
@@ -17,14 +16,6 @@ public class DishIngredient {
         this.ingredient = ingredient;
         this.requiredQuantity = requiredQuantity;
         this.unit = unit;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 
     public Dish getDish() {
@@ -62,8 +53,7 @@ public class DishIngredient {
     @Override
     public String toString() {
         return "DishIngredient{" +
-                "id=" + id +
-                ", dish=" + (dish != null ? dish.getId() : null) +
+                "dish=" + (dish != null ? dish.getId() : null) +
                 ", ingredient=" + (ingredient != null ? ingredient.getId() : null) +
                 ", requiredQuantity=" + requiredQuantity +
                 ", unit='" + unit + '\'' +
