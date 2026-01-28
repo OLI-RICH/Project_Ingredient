@@ -2,8 +2,9 @@ package model;
 
 public enum CategoryEnum {
     VEGETABLE,
-    ANIMAL,
-    MARINE,
+    MEAT,
     DAIRY,
-    OTHER
+    SWEET,
+    ANIMAL,    // ← ajouté précédemment
+    OTHER;     // ← ajoute cette ligne maintenant
 }
