@@ -1,26 +1,25 @@
--- TD4 Annexe 2: Gestion des commandes et ventes
+-- Type enum pour payment_status (K2)
+CREATE TYPE payment_status_enum AS ENUM ('PENDING', 'PAID', 'CANCELLED', 'REFUNDED');
 
--- 1. Créer la table Order
-CREATE TABLE "Order" (
+-- Table Order (avec payment_status obligatoire)
+CREATE TABLE IF NOT EXISTS "Order" (
     id SERIAL PRIMARY KEY,
-    reference VARCHAR(8) UNIQUE NOT NULL CHECK (reference ~ '^ORD[0-9]{5}$'),  -- Format ORDXXXXX
-    total_ht NUMERIC(10, 2) NOT NULL CHECK (total_ht >= 0),
-    total_ttc NUMERIC(10, 2) NOT NULL CHECK (total_ttc >= total_ht),
-    creation_datetime TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    reference VARCHAR(8) UNIQUE NOT NULL CHECK (reference ~ '^ORD[0-9]{5}$'),
+    total_ht NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (total_ht >= 0),
+    total_ttc NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (total_ttc >= total_ht),
+    creation_datetime TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    payment_status payment_status_enum NOT NULL DEFAULT 'PENDING'
 );
 
--- 2. Créer la table DishOrder (lien many-to-many Order <-> Dish avec quantity)
-CREATE TABLE DishOrder (
+-- Table DishOrder (lien commande ↔ plat)
+CREATE TABLE IF NOT EXISTS DishOrder (
     id SERIAL PRIMARY KEY,
     id_order INTEGER NOT NULL REFERENCES "Order"(id) ON DELETE CASCADE,
     id_dish INTEGER NOT NULL REFERENCES Dish(id) ON DELETE RESTRICT,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    UNIQUE (id_order, id_dish)  -- Pas de doublon plat dans commande
+    UNIQUE (id_order, id_dish) -- pas de doublon plat dans une commande
 );
 
--- 3. Sequence pour référence ORDXXXXX (optionnel, mais pour auto-génération si besoin)
-CREATE SEQUENCE order_ref_seq START 1;
-
--- Exemples d'inserts pour tests (optionnel, à adapter)
-INSERT INTO "Order" (reference, total_ht, total_ttc, creation_datetime) VALUES ('ORD00001', 50.00, 60.00, '2024-01-07 10:00:00+00');
-INSERT INTO DishOrder (id_order, id_dish, quantity) VALUES (1, 1, 2);  -- 2 plats id=1 pour order 1
+-- Index pour accélérer les recherches (optionnel mais recommandé)
+CREATE INDEX idx_order_reference ON "Order"(reference);
+CREATE INDEX idx_dishorder_order ON DishOrder(id_order);
