@@ -1,6 +1,5 @@
 package repository;
 
-import database.DBConnection;
 import model.Dish;
 import model.DishIngredient;
 import model.Ingredient;
@@ -11,11 +10,9 @@ import java.util.List;
 
 public class DishIngredientRepository {
 
-    private final DBConnection dbConnection;
     private final IngredientRepository ingredientRepository;
 
     public DishIngredientRepository() {
-        this.dbConnection = new DBConnection();
         this.ingredientRepository = new IngredientRepository();
     }
 

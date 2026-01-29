@@ -4,27 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Dish {
+
     private Integer id;
     private String name;
+    private Double price;
     private DishTypeEnum dishType;
-    private List<DishIngredient> dishIngredients;
-    private Double sellingPrice;
+
+    private List<DishIngredient> dishIngredientList = new ArrayList<>();
 
     public Dish() {
-        this.dishIngredients = new ArrayList<>();
-    }
-
-    public Dish(String name, DishTypeEnum dishType) {
-        this.name = name;
-        this.dishType = dishType;
-        this.dishIngredients = new ArrayList<>();
-    }
-
-    public Dish(Integer id, String name, DishTypeEnum dishType) {
-        this.id = id;
-        this.name = name;
-        this.dishType = dishType;
-        this.dishIngredients = new ArrayList<>();
     }
 
     public Integer getId() {
@@ -43,6 +31,23 @@ public class Dish {
         this.name = name;
     }
 
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
+    // Compatibility: some repositories use "sellingPrice" naming
+    public Double getSellingPrice() {
+        return this.price;
+    }
+
+    public void setSellingPrice(Double sellingPrice) {
+        this.price = sellingPrice;
+    }
+
     public DishTypeEnum getDishType() {
         return dishType;
     }
@@ -51,45 +56,31 @@ public class Dish {
         this.dishType = dishType;
     }
 
+    // Getter "sécure" qui renvoie une copie de la liste
     public List<DishIngredient> getDishIngredients() {
-        return dishIngredients;
+        return new ArrayList<>(dishIngredientList);
     }
 
-    public void setDishIngredients(List<DishIngredient> dishIngredients) {
-        this.dishIngredients = dishIngredients;
+    // Setter qui copie la liste passée en paramètre
+    public void setDishIngredients(List<DishIngredient> list) {
+        this.dishIngredientList = (list != null) ? new ArrayList<>(list) : new ArrayList<>();
     }
 
-    public Double getSellingPrice() {
-        return sellingPrice;
+    // Anciennes méthodes avec le nom *_List, tu peux les garder ou les supprimer
+    public List<DishIngredient> getDishIngredientList() {
+        return new ArrayList<>(dishIngredientList);
     }
 
-    public void setSellingPrice(Double sellingPrice) {
-        this.sellingPrice = sellingPrice;
+    public void setDishIngredientList(List<DishIngredient> dishIngredientList) {
+        this.dishIngredientList = (dishIngredientList != null)
+                ? new ArrayList<>(dishIngredientList)
+                : new ArrayList<>();
     }
 
-    public Double getDishCost() {
-        if (dishIngredients == null || dishIngredients.isEmpty()) {
-            return 0.0;
+    public void addDishIngredient(DishIngredient di) {
+        if (di != null) {
+            dishIngredientList.add(di);
         }
-
-        double totalCost = 0.0;
-        for (DishIngredient di : dishIngredients) {
-            if (di.getRequiredQuantity() == null) {
-                throw new RuntimeException("Quantité requise manquante");
-            }
-            if (di.getIngredient() == null || di.getIngredient().getPrice() == null) {
-                throw new RuntimeException("Prix de l’ingrédient manquant");
-            }
-            totalCost += di.getIngredient().getPrice() * di.getRequiredQuantity();
-        }
-        return totalCost;
-    }
-
-    public Double getGrossMargin() {
-        if (sellingPrice == null) {
-            throw new RuntimeException("Prix de vente null");
-        }
-        return sellingPrice - getDishCost();
     }
 
     @Override
@@ -97,9 +88,9 @@ public class Dish {
         return "Dish{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", price=" + price +
                 ", dishType=" + dishType +
-                ", sellingPrice=" + sellingPrice +
-                ", dishIngredients=" + dishIngredients +
+                ", nb ingrédients=" + dishIngredientList.size() +
                 '}';
     }
 }

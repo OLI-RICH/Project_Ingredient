@@ -3,6 +3,10 @@ package repository;
 import database.DBConnection;
 import model.CategoryEnum;
 import model.Ingredient;
+import model.StockMovement;
+import model.StockValue;
+import model.UnitEnum;
+import model.MovementTypeEnum;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -28,7 +32,9 @@ public class IngredientRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                ingredients.add(mapResultSetToIngredient(resultSet));
+                Ingredient ing = mapResultSetToIngredient(resultSet);
+                loadStockMovements(ing, connection);
+                ingredients.add(ing);
             }
 
         } catch (SQLException e) {
@@ -50,7 +56,9 @@ public class IngredientRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                return mapResultSetToIngredient(resultSet);
+                Ingredient ing = mapResultSetToIngredient(resultSet);
+                loadStockMovements(ing, connection);
+                return ing;
             }
 
             throw new RuntimeException("Ingrédient avec id " + id + " introuvable");
@@ -72,7 +80,9 @@ public class IngredientRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                return mapResultSetToIngredient(resultSet);
+                Ingredient ing = mapResultSetToIngredient(resultSet);
+                loadStockMovements(ing, connection);
+                return ing;
             }
 
             return null;
@@ -210,5 +220,27 @@ public class IngredientRepository {
         ingredient.setCategory(CategoryEnum.valueOf(resultSet.getString("category")));
 
         return ingredient;
+    }
+
+    private void loadStockMovements(Ingredient ingredient, Connection connection) {
+        String sql = "SELECT id, quantity, type, unit, creation_datetime FROM StockMovement WHERE id_ingredient = ? ORDER BY creation_datetime";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, ingredient.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    StockMovement m = new StockMovement();
+                    m.setId(rs.getInt("id"));
+                    m.setIdIngredient(ingredient.getId());
+                    double q = rs.getDouble("quantity");
+                    UnitEnum u = UnitEnum.valueOf(rs.getString("unit"));
+                    m.setValue(new StockValue(q, u));
+                    m.setType(MovementTypeEnum.valueOf(rs.getString("type")));
+                    m.setCreationDatetime(rs.getTimestamp("creation_datetime").toInstant());
+                    ingredient.addStockMovement(m);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

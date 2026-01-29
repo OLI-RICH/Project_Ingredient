@@ -1,21 +1,26 @@
 package model;
 
 public class DishIngredient {
+
+    private Integer id;
+
+    // objets liés (utilisés par repository et service)
     private Dish dish;
     private Ingredient ingredient;
+
+    // quantité requise pour la recette
     private Double requiredQuantity;
     private String unit;
 
-    public DishIngredient() {}
+    public DishIngredient() {
+    }
 
-    public DishIngredient(Dish dish,
-                          Ingredient ingredient,
-                          Double requiredQuantity,
-                          String unit) {
-        this.dish = dish;
-        this.ingredient = ingredient;
-        this.requiredQuantity = requiredQuantity;
-        this.unit = unit;
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public Dish getDish() {
@@ -50,11 +55,38 @@ public class DishIngredient {
         this.unit = unit;
     }
 
+    // Compatibility helpers for older code that used idDish/idIngredient/quantity
+    public void setIdDish(Integer idDish) {
+        if (this.dish == null) this.dish = new Dish();
+        this.dish.setId(idDish);
+    }
+
+    public Integer getIdDish() {
+        return (this.dish != null) ? this.dish.getId() : null;
+    }
+
+    public void setIdIngredient(Integer idIngredient) {
+        if (this.ingredient == null) this.ingredient = new Ingredient();
+        this.ingredient.setId(idIngredient);
+    }
+
+    public Integer getIdIngredient() {
+        return (this.ingredient != null) ? this.ingredient.getId() : null;
+    }
+
+    // backward-compatible aliases for 'requiredQuantity'
+    public Double getQuantity() {
+        return getRequiredQuantity();
+    }
+
+    public void setQuantity(Double q) {
+        setRequiredQuantity(q);
+    }
+
     @Override
     public String toString() {
         return "DishIngredient{" +
-                "dish=" + (dish != null ? dish.getId() : null) +
-                ", ingredient=" + (ingredient != null ? ingredient.getId() : null) +
+                "ingredient=" + (ingredient != null ? ingredient.getId() : null) +
                 ", requiredQuantity=" + requiredQuantity +
                 ", unit='" + unit + '\'' +
                 '}';
