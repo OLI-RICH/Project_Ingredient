@@ -28,6 +28,8 @@ public class MainTestTD4 {
 
         for (Ingredient ing : ingredients) {
             StockValue stockAtT = ing.getStockValueAt(t);
+            // Database-side (push-down) calculation
+            StockValue sqlStockAtT = dataRetriever.getStockValueAt(t, ing.getId());
             StockValue stockNow = ing.getStockValueAt(Instant.now());
 
             System.out.printf("%-12s | Stock à %s : %.2f %s%n",
@@ -35,6 +37,12 @@ public class MainTestTD4 {
 
             System.out.printf("           | Stock actuel : %.2f %s%n",
                     stockNow.getQuantity(), stockNow.getUnit());
+
+                System.out.printf("           | Stock (SQL) à %s : %.2f %s%n",
+                    t, sqlStockAtT.getQuantity(), sqlStockAtT.getUnit());
+
+                double diff = stockAtT.getQuantity() - sqlStockAtT.getQuantity();
+                System.out.printf("           | Diff OO vs SQL : %.4f %s%n", diff, stockAtT.getUnit());
 
             System.out.printf("           | Mouvements : %d%n%n",
                     ing.getStockMovementList().size());

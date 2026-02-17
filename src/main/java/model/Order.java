@@ -7,11 +7,11 @@ import java.util.List;
 public class Order {
 
     private Integer id;
-    private String reference;           // ORDXXXXX
+    private String reference;
     private Double totalHT;
     private Double totalTTC;
     private Instant creationDatetime;
-    private PaymentStatus paymentStatus; // ← obligatoire pour K2
+    private PaymentStatus paymentStatus;
 
     private List<DishOrder> dishOrderList = new ArrayList<>();
 

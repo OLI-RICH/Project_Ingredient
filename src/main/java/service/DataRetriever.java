@@ -453,6 +453,99 @@ public class DataRetriever {
         return null;
     }
 
+    /**
+     * Database-side calculation of stock value for an ingredient at instant t.
+     * Uses SQL to sum movements (IN as positive, OUT as negative) up to the given timestamp.
+     */
+    public StockValue getStockValueAt(Instant t, Integer ingredientIdentifier) {
+        String sql = """
+        SELECT COALESCE(unit, 'KG') AS unit,
+               SUM(CASE WHEN type = 'OUT' THEN -quantity ELSE quantity END) AS actual_quantity
+        FROM StockMovement
+        WHERE id_ingredient = ?
+          AND creation_datetime <= ?
+        GROUP BY COALESCE(unit, 'KG')
+    """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, ingredientIdentifier);
+            ps.setTimestamp(2, Timestamp.from(t));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double qty = rs.getDouble("actual_quantity");
+                    String unitStr = rs.getString("unit");
+                    UnitEnum unit = UnitEnum.valueOf(unitStr);  // devrait marcher car COALESCE force 'KG'
+                    return new StockValue(qty, unit);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Pas de mouvement → 0 KG (cohérent avec l'approche objet)
+        return new StockValue(0.0, UnitEnum.KG);
+    }
+
+    /**
+     * Coût total des ingrédients pour un plat (push-down)
+     */
+    public Double getDishCost(Integer dishId) {
+        String sql = """
+        SELECT SUM(di.required_quantity * i.price) AS total_cost
+        FROM DishIngredient di
+        JOIN Ingredient i ON di.id_ingredient = i.id
+        WHERE di.id_dish = ?
+    """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, dishId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("total_cost");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+
+    /**
+     * Marge brute d'un plat = prix de vente - coût des ingrédients (push-down)
+     */
+    public Double getGrossMargin(Integer dishId) {
+        String sql = """
+        SELECT d.selling_price - 
+               COALESCE(SUM(di.required_quantity * i.price), 0) AS gross_margin
+        FROM Dish d
+        LEFT JOIN DishIngredient di ON di.id_dish = d.id
+        LEFT JOIN Ingredient i ON di.id_ingredient = i.id
+        WHERE d.id = ?
+        GROUP BY d.selling_price
+    """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, dishId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("gross_margin");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+
     private String generateNextOrderReference() {
         String sql = "SELECT COUNT(*) + 1 as next_id FROM \"Order\"";
         try (Connection conn = getConnection();
